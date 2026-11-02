@@ -4,7 +4,7 @@
 
   <h1>Built with AI Studio</h2>
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+  <p>The fastest path from prompt to production with Gemini. (This is the code for the LitterLooker App.)</p>
 
   <a href="https://aistudio.google.com/apps">Start building</a>
 
