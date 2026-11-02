@@ -1,0 +1,161 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account information and stats",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "totalXP": { "type": "number" },
+        "sparks": { "type": "number" },
+        "level": { "type": "integer" },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "isVerified": { "type": "boolean" },
+            "isCreator": { "type": "boolean" },
+            "isTester": { "type": "boolean" },
+            "isModerator": { "type": "boolean" }
+          }
+        }
+      },
+      "required": ["id", "uid", "username"]
+    },
+    "MapPin": {
+      "title": "Map Pin",
+      "description": "A litter pin on the map",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "status": { "type": "string" },
+        "reportCount": { "type": "integer" }
+      },
+      "required": ["id", "userId", "lat", "lng", "status"]
+    },
+    "CommunityPost": {
+      "title": "Community Post",
+      "description": "A post in the community feed",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "reportCount": { "type": "integer" }
+      },
+      "required": ["id", "userId", "content", "timestamp"]
+    },
+    "ContentReport": {
+      "title": "Content Report",
+      "description": "A report submitted by a user against content",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "reporterUsername": { "type": "string" },
+        "targetId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["pin", "post"] },
+        "reason": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "resolved"] }
+      },
+      "required": ["id", "reporterId", "reporterUsername", "targetId", "targetType", "reason", "timestamp", "status"]
+    },
+    "Team": {
+      "title": "Team / Guild",
+      "description": "A group of users collaborating",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "creatorUsername": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "admins": { "type": "array", "items": { "type": "string" } },
+        "totalXP": { "type": "number" },
+        "level": { "type": "number" },
+        "joinedAt": { "type": "number" },
+        "isPrivate": { "type": "boolean" },
+        "joinRequests": { "type": "array", "items": { "type": "string" } },
+        "maxSize": { "type": "integer" },
+        "minXP": { "type": "integer" },
+        "characteristics": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["id", "name", "creatorId", "creatorUsername", "members", "admins", "totalXP", "level", "joinedAt", "isPrivate", "maxSize", "characteristics"]
+    },
+    "TeamMessage": {
+      "title": "Team Message",
+      "description": "A message sent in a crew chat",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "teamId": { "type": "string" },
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "teamId", "userId", "username", "content", "timestamp"]
+    },
+    "ProgressReport": {
+      "title": "Progress Report",
+      "description": "A progress update on a litter pin",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "pinId": { "type": "string" },
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "description": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "percentage": { "type": "number" }
+      },
+      "required": ["id", "pinId", "userId", "username", "timestamp"]
+    },
+    "SecurityConfig": {
+      "title": "Security Configuration",
+      "description": "Global security settings and hashes",
+      "type": "object",
+      "properties": {
+        "adminKeyHash": { "type": "string" },
+        "moderatorKeyHash": { "type": "string" },
+        "admins": { "type": "array", "items": { "type": "string" } },
+        "moderators": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "ShopItem": {
+      "title": "Shop Item",
+      "description": "An item available for purchase in the rewards shop",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "priceScrap": { "type": "number" },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
+        "type": { "type": "string", "enum": ["customization", "consumable", "perk", "title"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name", "priceScrap", "type", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{username}": { "schema": "UserProfile", "description": "User profiles" },
+    "/pins/{pinId}": { "schema": "MapPin", "description": "Litter pins" },
+    "/posts/{postId}": { "schema": "CommunityPost", "description": "Community posts" },
+    "/moderation/{reportId}": { "schema": "ContentReport", "description": "Moderation reports" },
+    "/teams/{teamId}": { "schema": "Team", "description": "Cleanup Crews" },
+    "/teamMessages/{messageId}": { "schema": "TeamMessage", "description": "Crew chat messages" },
+    "/progressReports/{reportId}": { "schema": "ProgressReport", "description": "Pin progress updates" },
+    "/shop/{itemId}": { "schema": "ShopItem", "description": "Items in the rewards shop" },
+    "/meta/security": { "schema": "SecurityConfig", "description": "Global security settings" }
+  }
+}

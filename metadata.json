@@ -1,0 +1,12 @@
+{
+  "name": "LitterLooker",
+  "description": "A community-driven platform for identifying and coordinating litter cleanup efforts!",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera",
+    "notifications"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

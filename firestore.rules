@@ -1,0 +1,267 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Check if the requester's UID matches the document's owner UID
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Helper: Check if the requester's username or UID matches
+    function isUser(identifier) {
+      return request.auth != null && (
+        request.auth.uid == identifier ||
+        (exists(/databases/$(database)/documents/users/$(identifier)) &&
+         get(/databases/$(database)/documents/users/$(identifier)).data.uid == request.auth.uid)
+      );
+    }
+
+    // Helper: Check if the user is an admin
+    function isAdmin() {
+      return request.auth != null && (
+        (request.auth.token.email != null && (request.auth.token.email.matches('(?i)^litterlooker@gmail\\.com$') || request.auth.token.email == "litterlooker@gmail.com" || request.auth.token.email == "Litterlooker@gmail.com")) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.totalXP == -1 ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.totalXP == 999999999)) ||
+        (request.auth.token.name != null && exists(/databases/$(database)/documents/users/$(request.auth.token.name)) &&
+         (get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.isAdmin == true ||
+          get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.totalXP == -1 ||
+          get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.totalXP == 999999999)) ||
+        (exists(/databases/$(database)/documents/meta/security) &&
+         ('admins' in get(/databases/$(database)/documents/meta/security).data) &&
+         get(/databases/$(database)/documents/meta/security).data.admins is list &&
+         (request.auth.uid in get(/databases/$(database)/documents/meta/security).data.admins ||
+          (request.auth.token.name != null && request.auth.token.name in get(/databases/$(database)/documents/meta/security).data.admins) ||
+          (request.auth.token.email != null && request.auth.token.email in get(/databases/$(database)/documents/meta/security).data.admins)))
+      );
+    }
+
+    // Helper: Check if the user has a "Creator" permission flag in their profile
+    function isCreator() {
+      return request.auth != null && (
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              (
+                ('permissions' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.isCreator == true) ||
+                ('tags' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags is list &&
+                 'Creator' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags)
+              )) ||
+             (request.auth.token.name != null && exists(/databases/$(database)/documents/users/$(request.auth.token.name)) &&
+              (
+                ('permissions' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.permissions.isCreator == true) ||
+                ('tags' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.tags is list &&
+                 'Creator' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.tags)
+              )) ||
+             (exists(/databases/$(database)/documents/meta/security) &&
+              'admins' in get(/databases/$(database)/documents/meta/security).data &&
+              get(/databases/$(database)/documents/meta/security).data.admins is list &&
+              (request.auth.uid in get(/databases/$(database)/documents/meta/security).data.admins ||
+               (request.auth.token.name != null && request.auth.token.name in get(/databases/$(database)/documents/meta/security).data.admins)))
+      );
+    }
+
+    // Helper: Check if the user has a "Tester" permission flag in their profile
+    function isTester() {
+      return request.auth != null && (
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              (
+                ('permissions' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.isTester == true) ||
+                ('tags' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags is list &&
+                 'Tester' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags)
+              )) ||
+             (request.auth.token.name != null && exists(/databases/$(database)/documents/users/$(request.auth.token.name)) &&
+              (
+                ('permissions' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.permissions.isTester == true) ||
+                ('tags' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.tags is list &&
+                 'Tester' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.tags)
+              ))
+      );
+    }
+
+    // Helper: Check if the user has a "Moderator" permission flag in their profile
+    function isModerator() {
+      return request.auth != null && (
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              (
+                ('permissions' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.isModerator == true) ||
+                ('tags' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags is list &&
+                 'Moderator' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tags)
+              )) ||
+             (request.auth.token.name != null && exists(/databases/$(database)/documents/users/$(request.auth.token.name)) &&
+              (
+                ('permissions' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.permissions.isModerator == true) ||
+                ('tags' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data &&
+                 get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.tags is list &&
+                 'Moderator' in get(/databases/$(database)/documents/users/$(request.auth.token.name)).data.tags)
+              )) ||
+             (exists(/databases/$(database)/documents/meta/security) &&
+              'moderators' in get(/databases/$(database)/documents/meta/security).data &&
+              get(/databases/$(database)/documents/meta/security).data.moderators is list &&
+              (request.auth.uid in get(/databases/$(database)/documents/meta/security).data.moderators ||
+               (request.auth.token.name != null && request.auth.token.name in get(/databases/$(database)/documents/meta/security).data.moderators)))
+      );
+    }
+
+    // Helper: Check if the user is a creator or moderator
+    function isCreatorOrModerator() {
+      return isAdmin() || isCreator() || isModerator();
+    }
+
+    // Helper: Check if the app is locked down via security document
+    function isLockedDown() {
+       return exists(/databases/$(database)/documents/meta/security) && 
+              get(/databases/$(database)/documents/meta/security).data.isLockedDown == true;
+    }
+
+    // User Profiles
+    match /users/{username} {
+      allow get: if true;
+      allow list: if request.auth != null;
+      allow create: if request.auth != null && (request.resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if request.auth != null && (
+        isUser(username) ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['friendRequests', 'friends', 'totalReactionsReceived', 'maxCommentsReceived', 'timesTaggedCount', 'hasBeenTagged', 'totalXP', 'availableXP', 'availableScrap', 'sparks'])
+      );
+      allow delete: if isAdmin() || isUser(username);
+    }
+
+    // Shop Items
+    match /shop/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Litter Pins
+    match /pins/{pinId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && !isLockedDown() && (isUser(request.resource.data.userId) || isUser(request.resource.data.creatorId) || isUser(request.resource.data.username));
+      allow update: if request.auth != null && (
+        isUser(resource.data.userId) || 
+        isUser(resource.data.creatorId) ||
+        isUser(resource.data.username) ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progressReports', 'urgency', 'participatorUsernames', 'isCompleted', 'attendees', 'upvotes', 'downvotes', 'reportCount'])
+      );
+      allow delete: if request.auth != null && (isUser(resource.data.userId) || isUser(resource.data.creatorId) || isUser(resource.data.username) || isAdmin());
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow read: if request.auth != null && isUser(resource.data.targetUserId);
+      allow create: if request.auth != null && !isUser(request.resource.data.targetUserId);
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && isUser(resource.data.targetUserId);
+    }
+
+    // Community Posts
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && !isLockedDown() && isUser(request.resource.data.userId);
+      allow update: if request.auth != null && (
+        isUser(resource.data.userId) ||
+        isAdmin() ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'replies', 'reportCount'])
+      );
+      allow delete: if request.auth != null && (isUser(resource.data.userId) || isAdmin());
+    }
+
+    // Admin Logs
+    match /admin_logs/{logId} {
+      allow read: if isAdmin() || isCreator() || isTester() || isModerator();
+      allow create: if isAdmin() || isCreator() || isTester() || isModerator();
+      allow update, delete: if false; 
+    }
+
+    // Multiplier Zones
+    match /zones/{zoneId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Content Moderation Reports
+    match /moderation/{reportId} {
+      allow read: if isCreatorOrModerator();
+      allow create: if request.auth != null && isUser(request.resource.data.reporterId);
+      allow update, delete: if isCreatorOrModerator();
+    }
+
+    // Cleanup Crews
+    match /teams/{teamId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && isUser(request.resource.data.creatorId);
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (isUser(resource.data.creatorId) || isAdmin());
+    }
+
+    // Crew Chat Messages
+    match /teamMessages/{messageId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Pin Progress Reports
+    match /progressReports/{reportId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && !isLockedDown();
+      allow update, delete: if isAdmin() || (request.auth != null && isUser(resource.data.userId));
+    }
+
+    // Group Cleanups (Crew Events)
+    match /groupCleanups/{eventId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (
+        isAdmin() ||
+        request.resource.data.teamId == null || 
+        (exists(/databases/$(database)/documents/teams/$(request.resource.data.teamId)) && (
+          ('adminUids' in get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data && 
+           request.auth.uid in get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.adminUids) ||
+          (request.auth.token.name != null && 
+           request.auth.token.name in get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.admins)
+        ))
+      );
+      allow update: if request.auth != null && (
+        isAdmin() ||
+        isUser(resource.data.creatorId) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees', 'reportCount'])
+      );
+      allow delete: if request.auth != null && (isUser(resource.data.creatorId) || isAdmin());
+    }
+
+    // Meta Settings and Security
+    match /meta/{docId} {
+      allow read: if request.auth != null;
+      
+      allow update: if request.auth != null && (
+        ((isAdmin() || isCreator()) && (!('adminPanelValid' in request.resource.data) || request.resource.data.adminPanelValid == resource.data.adminPanelValid) && (!('modPanelValid' in request.resource.data) || request.resource.data.modPanelValid == resource.data.modPanelValid)) || 
+        (docId == 'globalSettings' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalLitterStats'])) ||
+        (docId == 'leaderboard' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastResetMonth'])) ||
+        (docId == 'security' && (
+          ((isAdmin() || isCreator()) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['admins', 'moderators', 'shopKey', 'shopKeyDate'])) ||
+          (isModerator() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['moderators'])) ||
+          (request.auth != null && (!('shopKeyDate' in resource.data) || request.resource.data.shopKeyDate != resource.data.shopKeyDate) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shopKey', 'shopKeyDate']))
+        )) ||
+        (docId == 'announcement' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'replies', 'sparkClaimers']))
+      );
+      
+      allow create: if request.auth != null && (
+        isAdmin() || 
+        isCreator() ||
+        (docId == 'globalSettings' && request.resource.data.id == 'globalSettings' && request.resource.data.showPublicStats == false)
+      );
+      allow delete: if isAdmin() || isCreator();
+    }
+  }
+}
